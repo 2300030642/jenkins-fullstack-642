@@ -1,21 +1,9 @@
 pipeline {
     agent any
 
-    environment {
-        // Set your Tomcat path
-        CATALINA_HOME = 'C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1'
-        PATH = "C:\\Program Files\\nodejs;C:\\Program Files\\Apache\\maven\\bin;${env.PATH}"
-    }
-
-    options {
-        buildDiscarder(logRotator(numToKeepStr: '5'))
-        timeout(time: 30, unit: 'MINUTES')
-    }
-
     stages {
         stage('Clean Workspace') {
             steps {
-                echo '🧹 Cleaning workspace...'
                 deleteDir()
             }
         }
@@ -25,7 +13,7 @@ pipeline {
                 echo '📥 Checking out source code...'
                 checkout scm
 
-                echo '📂 Listing workspace contents:'
+                echo '📂 Listing workspace contents after checkout:'
                 bat 'dir'
             }
         }
@@ -34,10 +22,23 @@ pipeline {
             steps {
                 dir('library-reactapp') {
                     echo '📦 Installing frontend dependencies...'
+                    bat 'dir' // ✅ See if package.json exists
                     bat 'npm install'
-                    echo '🚀 Building frontend...'
                     bat 'npm run build'
                 }
+            }
+        }
+
+        stage('Deploy Frontend to Tomcat') {
+            steps {
+                bat '''
+                "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\bin\\shutdown.bat"
+                if exist "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\library-frontend" (
+                    rmdir /S /Q "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\library-frontend"
+                )
+                xcopy /E /I /Y library-reactapp\\dist\\* "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\library-frontend"
+                "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\bin\\startup.bat"
+                '''
             }
         }
 
@@ -50,34 +51,29 @@ pipeline {
             }
         }
 
-        stage('Deploy to Tomcat') {
+        stage('Deploy Backend to Tomcat') {
             steps {
-                echo '📂 Deploying frontend and backend to Tomcat...'
-                bat """
-                "%CATALINA_HOME%\\bin\\shutdown.bat"
-                timeout /t 5
-
-                :: Deploy frontend
-                if exist "%CATALINA_HOME%\\webapps\\library-frontend" rmdir /S /Q "%CATALINA_HOME%\\webapps\\library-frontend"
-                xcopy /E /I /Y library-reactapp\\dist\\* "%CATALINA_HOME%\\webapps\\library-frontend"
-
-                :: Deploy backend
-                if exist "%CATALINA_HOME%\\webapps\\library-backend.war" del /Q "%CATALINA_HOME%\\webapps\\library-backend.war"
-                if exist "%CATALINA_HOME%\\webapps\\library-backend" rmdir /S /Q "%CATALINA_HOME%\\webapps\\library-backend"
-                copy "LibraryManagementSystem\\target\\*.war" "%CATALINA_HOME%\\webapps\\library-backend.war"
-
-                "%CATALINA_HOME%\\bin\\startup.bat"
-                """
+                bat '''
+                "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\bin\\shutdown.bat"
+                if exist "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\library-backend.war" (
+                    del /Q "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\library-backend.war"
+                )
+                if exist "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\library-backend" (
+                    rmdir /S /Q "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\library-backend"
+                )
+                copy "LibraryManagementSystem\\target\\*.war" "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\library-backend.war"
+                "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\bin\\startup.bat"
+                '''
             }
         }
     }
 
     post {
         success {
-            echo '✅ Build and deployment completed successfully!'
+            echo '✅ Deployment Successful!'
         }
         failure {
-            echo '❌ Pipeline failed. Check console output.'
+            echo '❌ Pipeline Failed.'
         }
     }
 }
