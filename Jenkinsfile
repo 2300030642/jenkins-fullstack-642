@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    environment {
+        // Set your Tomcat home
+        CATALINA_HOME = "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1"
+    }
+
     stages {
         stage('Clean Workspace') {
             steps {
@@ -28,35 +33,28 @@ pipeline {
 
         stage('Deploy Backend to Tomcat (WAR)') {
             steps {
+                echo '🚀 Deploying backend WAR to Tomcat...'
                 bat '''
-                "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\bin\\shutdown.bat"
-                if exist "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\springbootlibrarymanagement.war" (
-                    del /Q "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\springbootlibrarymanagement.war"
+                "%CATALINA_HOME%\\bin\\shutdown.bat"
+                
+                if exist "%CATALINA_HOME%\\webapps\\springbootlibrarymanagement.war" (
+                    del /Q "%CATALINA_HOME%\\webapps\\springbootlibrarymanagement.war"
                 )
-                if exist "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\springbootlibrarymanagement" (
-                    rmdir /S /Q "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\springbootlibrarymanagement"
+                if exist "%CATALINA_HOME%\\webapps\\springbootlibrarymanagement" (
+                    rmdir /S /Q "%CATALINA_HOME%\\webapps\\springbootlibrarymanagement"
                 )
-                copy "LibraryManagementSystem\\target\\springbootlibrarymanagement.war" "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\springbootlibrarymanagement.war"
-                "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\bin\\startup.bat"
+                
+                copy "LibraryManagementSystem\\target\\springbootlibrarymanagement.war" "%CATALINA_HOME%\\webapps\\springbootlibrarymanagement.war"
+                
+                "%CATALINA_HOME%\\bin\\startup.bat"
                 '''
             }
         }
-stage('Run Backend') {
-    steps {
-        echo "🚀 Running Spring Boot backend using embedded Tomcat..."
-        bat """
-            cd LibraryManagementSystem\\target
-            java -jar springbootlibrarymanagement.war
-        """
-    }
-}
-
 
         stage('Build Frontend') {
             steps {
                 dir('library-reactapp') {
-                    echo '📦 Installing frontend dependencies...'
-                    bat 'dir' // just to check package.json exists
+                    echo '📦 Installing frontend dependencies and building...'
                     bat 'npm install'
                     bat 'npm run build'
                 }
@@ -65,13 +63,17 @@ stage('Run Backend') {
 
         stage('Deploy Frontend to Tomcat') {
             steps {
+                echo '🚀 Deploying frontend to Tomcat...'
                 bat '''
-                "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\bin\\shutdown.bat"
-                if exist "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\library-frontend" (
-                    rmdir /S /Q "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\library-frontend"
+                "%CATALINA_HOME%\\bin\\shutdown.bat"
+                
+                if exist "%CATALINA_HOME%\\webapps\\library-frontend" (
+                    rmdir /S /Q "%CATALINA_HOME%\\webapps\\library-frontend"
                 )
-                xcopy /E /I /Y library-reactapp\\dist\\* "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\library-frontend"
-                "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\bin\\startup.bat"
+                
+                xcopy /E /I /Y library-reactapp\\dist\\* "%CATALINA_HOME%\\webapps\\library-frontend"
+                
+                "%CATALINA_HOME%\\bin\\startup.bat"
                 '''
             }
         }
@@ -79,7 +81,7 @@ stage('Run Backend') {
 
     post {
         success {
-            echo '✅ Deployment Successful!'
+            echo '✅ Pipeline Successful! Backend and Frontend deployed to Tomcat.'
         }
         failure {
             echo '❌ Pipeline Failed.'
