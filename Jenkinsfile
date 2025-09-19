@@ -18,6 +18,14 @@ pipeline {
             }
         }
 
+        stage('Deploy Backend to Tomcat') {
+    steps {
+        bat """
+        copy /Y LibraryManagementSystem\\target\\springbootlibrarymanagement.war "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\springbootlibrarymanagement.war"
+        """
+    }
+}
+
         stage('Build Frontend') {
             steps {
                 dir('library-reactapp') {
