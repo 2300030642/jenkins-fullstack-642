@@ -42,8 +42,15 @@ pipeline {
             }
         }
 stage('Run Backend') {
-  bat "java -jar LibraryManagementSystem/target/springbootlibrarymanagement.war"
+    steps {
+        echo "🚀 Running Spring Boot backend using embedded Tomcat..."
+        bat """
+            cd LibraryManagementSystem\\target
+            java -jar springbootlibrarymanagement.war
+        """
+    }
 }
+
 
         stage('Build Frontend') {
             steps {
