@@ -1,56 +1,9 @@
 pipeline {
     agent any
 
-    environment {
-        // Set your Tomcat home
-        CATALINA_HOME = "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1"
-    }
-
     stages {
-        stage('Clean Workspace') {
-            steps {
-                deleteDir()
-            }
-        }
 
-        stage('Checkout Code') {
-            steps {
-                echo '📥 Checking out source code...'
-                checkout scm
-                echo '📂 Listing workspace contents after checkout:'
-                bat 'dir'
-            }
-        }
-
-        stage('Build Backend') {
-            steps {
-                dir('LibraryManagementSystem') {
-                    echo '⚙️ Building backend with Maven...'
-                    bat 'mvn clean package -DskipTests'
-                }
-            }
-        }
-
-        stage('Deploy Backend to Tomcat (WAR)') {
-            steps {
-                echo '🚀 Deploying backend WAR to Tomcat...'
-                bat '''
-                "%CATALINA_HOME%\\bin\\shutdown.bat"
-                
-                if exist "%CATALINA_HOME%\\webapps\\springbootlibrarymanagement.war" (
-                    del /Q "%CATALINA_HOME%\\webapps\\springbootlibrarymanagement.war"
-                )
-                if exist "%CATALINA_HOME%\\webapps\\springbootlibrarymanagement" (
-                    rmdir /S /Q "%CATALINA_HOME%\\webapps\\springbootlibrarymanagement"
-                )
-                
-                copy "LibraryManagementSystem\\target\\springbootlibrarymanagement.war" "%CATALINA_HOME%\\webapps\\springbootlibrarymanagement.war"
-                
-                "%CATALINA_HOME%\\bin\\startup.bat"
-                '''
-            }
-        }
-
+        // ===== FRONTEND BUILD =====
         stage('Build Frontend') {
             steps {
                 dir('library-reactapp') {
@@ -61,27 +14,49 @@ pipeline {
             }
         }
 
+        // ===== FRONTEND DEPLOY =====
         stage('Deploy Frontend to Tomcat') {
             steps {
-                echo '🚀 Deploying frontend to Tomcat...'
                 bat '''
-                "%CATALINA_HOME%\\bin\\shutdown.bat"
-                
-                if exist "%CATALINA_HOME%\\webapps\\library-frontend" (
-                    rmdir /S /Q "%CATALINA_HOME%\\webapps\\library-frontend"
+                if exist "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\library-frontend" (
+                    rmdir /S /Q "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\library-frontend"
                 )
-                
-                xcopy /E /I /Y library-reactapp\\dist\\* "%CATALINA_HOME%\\webapps\\library-frontend"
-                
-                "%CATALINA_HOME%\\bin\\startup.bat"
+                mkdir "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\library-frontend"
+                xcopy /E /I /Y library-reactapp\\dist\\* "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\library-frontend"
                 '''
             }
         }
+
+        // ===== BACKEND BUILD =====
+        stage('Build Backend') {
+            steps {
+                dir('LibraryManagementSystem') {
+                    echo '⚙️ Building backend with Maven...'
+                    bat 'mvn clean package -DskipTests'
+                }
+            }
+        }
+
+        // ===== BACKEND DEPLOY =====
+        stage('Deploy Backend to Tomcat') {
+            steps {
+                bat '''
+                if exist "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\springbootlibrarymanagement.war" (
+                    del /Q "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\springbootlibrarymanagement.war"
+                )
+                if exist "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\springbootlibrarymanagement" (
+                    rmdir /S /Q "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\springbootlibrarymanagement"
+                )
+                copy "LibraryManagementSystem\\target\\springbootlibrarymanagement.war" "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\"
+                '''
+            }
+        }
+
     }
 
     post {
         success {
-            echo '✅ Pipeline Successful! Backend and Frontend deployed to Tomcat.'
+            echo '✅ Deployment Successful!'
         }
         failure {
             echo '❌ Pipeline Failed.'
