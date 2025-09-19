@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:2030/springbootlibrarymanagement/api/books";
+const API_URL = "http://localhost:2030/springbootlibrarymanagement";
 
 export const getBooks = () => axios.get(`${API_URL}/all`);
 export const getBookById = (id) => axios.get(`${API_URL}/${id}`);
