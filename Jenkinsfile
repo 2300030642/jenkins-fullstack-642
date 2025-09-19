@@ -41,6 +41,9 @@ pipeline {
                 '''
             }
         }
+stage('Run Backend') {
+  bat "java -jar LibraryManagementSystem/target/springbootlibrarymanagement.war"
+}
 
         stage('Build Frontend') {
             steps {
