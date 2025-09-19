@@ -3,7 +3,6 @@ package com.lib.service;
 
 import com.lib.entity.Book;
 import com.lib.repo.BookRepo;
-import com.lib.service.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

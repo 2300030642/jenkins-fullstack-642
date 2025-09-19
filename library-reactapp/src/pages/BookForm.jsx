@@ -6,14 +6,18 @@ function BookForm({ book, refresh, clearEdit }) {
 
   useEffect(() => {
     if (book) {
-      setForm(book);
+      setForm(book); // prefill form when editing
     } else {
       setForm({ title: "", author: "", category: "", copies: 1 });
     }
   }, [book]);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({
+      ...form,
+      [name]: name === "copies" ? Number(value) : value, // ensure copies is a number
+    });
   };
 
   const handleSubmit = (e) => {
@@ -31,10 +35,35 @@ function BookForm({ book, refresh, clearEdit }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <input name="title" value={form.title} onChange={handleChange} placeholder="Title" required />
-      <input name="author" value={form.author} onChange={handleChange} placeholder="Author" required />
-      <input name="category" value={form.category} onChange={handleChange} placeholder="Category" required />
-      <input type="number" name="copies" value={form.copies} onChange={handleChange} min="1" required />
+      <input
+        name="title"
+        value={form.title}
+        onChange={handleChange}
+        placeholder="Title"
+        required
+      />
+      <input
+        name="author"
+        value={form.author}
+        onChange={handleChange}
+        placeholder="Author"
+        required
+      />
+      <input
+        name="category"
+        value={form.category}
+        onChange={handleChange}
+        placeholder="Category"
+        required
+      />
+      <input
+        type="number"
+        name="copies"
+        value={form.copies}
+        onChange={handleChange}
+        min="1"
+        required
+      />
       <button type="submit">{form.id ? "Update" : "Add"} Book</button>
       {form.id && <button type="button" onClick={clearEdit}>Cancel</button>}
     </form>

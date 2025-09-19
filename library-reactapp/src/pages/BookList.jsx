@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-// Inside BookList.jsx or BookForm.jsx
 import { getBooks, deleteBook } from "../service/config";
-
 
 function BookList({ onEdit, reload }) {
   const [books, setBooks] = useState([]);
